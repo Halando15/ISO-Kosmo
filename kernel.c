@@ -18,6 +18,8 @@
 #include "stdio.h"
 #include "pit.h"
 #include "keyboard.h"
+#include "shell.h"
+#include "kosmofs.h"
 
 /* =============================================================================
  * ESTADO GLOBAL DEL SISTEMA
@@ -247,33 +249,16 @@ void kernel_main(uint32_t magic, multiboot_info_t* mbi) {
     vga_set_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
     kprintf("  All core subsystems initialized successfully.\n\n");
 
-    /* ── Paso 9: Demostración interactiva (hasta Fase 5 = Shell) ─────────── */
+    /* ── Paso 9: Filesystem ─────────────────────────────────────────────────── */
+    kfs_init();
+
+    /* ── Paso 10: Lanzar el shell (Fase 5) ─────────────────────────────────── */
     vga_set_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK);
-    kprintf("\n  All Phase 4 drivers loaded successfully!\n");
+    kprintf("\n  All subsystems loaded. Starting shell...\n");
+    sleep_ms(400);
 
-    vga_set_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-    kprintf("  Uptime: %u ticks  |  Timer: %u Hz\n\n",
-            (uint32_t)pit_get_ticks(), (uint32_t)PIT_TICK_RATE);
-
-    vga_set_color(VGA_COLOR_YELLOW, VGA_COLOR_BLACK);
-    kprintf("  [ Keyboard Test ] Type anything (ESC to skip):\n  > ");
-    vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
-
-    /* Mini bucle de eco de teclado para probar drivers */
-    char c;
-    while ((c = keyboard_getchar_blocking()) != 0x1B) {
-        if (c == '\n') {
-            vga_putchar('\n');
-            vga_set_color(VGA_COLOR_YELLOW, VGA_COLOR_BLACK);
-            kprintf("  > ");
-            vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
-        } else {
-            vga_putchar(c);
-        }
-    }
-
-    vga_set_color(VGA_COLOR_DARK_GREY, VGA_COLOR_BLACK);
-    kprintf("\n\n  Phase 5 (Shell) coming soon...\n");
+    /* shell_start() contiene el bucle principal — no retorna */
+    shell_start();
 
     /* ── Bucle principal del kernel ──────────────────────────────────────── */
     /* Por ahora, un bucle de espera de interrupciones (halt loop).
